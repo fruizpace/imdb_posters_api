@@ -1,37 +1,37 @@
 import requests
-from tkinter import *
 
 API_KEY =  56568558
 url_template = "http://www.omdbapi.com/?apikey={}&{}={}"
+
+class PeticionError(Exception): # clase que hereda de Excpetion
+    pass
 
 def peticion(url):
     respuesta = requests.get(url)
     if respuesta.status_code == 200: # si ha ido bien...
         datos = respuesta.json() # guarda la respuesta
         if datos['Response'] == "False": # si la respuesta tiene resultado negativo
-            return datos["Error"] # string
+            raise Exception(datos['Error'])
         else: # si la respuesta tiene resultado positivo (o sea hay info de pelis)
             return datos
     else:
-        return respuesta.status_code #string
+        raise Exception("Error de consulta: {}".format(respuesta.status_code))
 
 iniciador = 'y'
 while iniciador == 'y':
-    pregunta = input('Título de la película: ')
-    # Petición 1: para obtener identificador de la peli
-    respuesta = peticion(url_template.format(API_KEY,'s', pregunta)) # 's' = search
-    if isinstance(respuesta, str):
-        print("Error en consulta: ", respuesta)
-    else: # si da un diccionario
+    try:
+        pregunta = input('Título de la película: ')
+        respuesta = peticion(url_template.format(API_KEY,'s', pregunta)) # 's' = search
         primera_peli = respuesta['Search'][0] # 1er elemento de la lista de pelis que coinciden con el título
         clave = primera_peli['imdbID'] # identificador de la primera peli
-        # Petición 2: con el id ahora puedo acceder a más info de la peli
+
         respuesta = peticion(url_template.format(API_KEY, 'i', clave))
-        if isinstance(respuesta, str):
-            print(respuesta)
-        else:
-            titulo = respuesta['Title']
-            agno = respuesta['Year']
-            director = respuesta['Director']
-            print("La película {} ({}) fue dirigida por {}.".format(titulo, agno, director))
+        titulo = respuesta['Title']
+        agno = respuesta['Year']
+        director = respuesta['Director']
+        print("La película {} ({}) fue dirigida por {}.".format(titulo, agno, director))
+        
+    except Exception as e: # metemos en "e" el error y luego lo imprimo
+        print(e)
+        
     iniciador = input('¿Quieres buscar otra película? (y/n): ').lower()
